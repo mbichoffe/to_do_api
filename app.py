@@ -1,5 +1,5 @@
 #!flask/bin/python
-from flask import Flask, jsonify, request, make_response, abort
+from flask import Flask, jsonify, request, make_response, abort, url_for
 from model import connect_to_db, Tasks, db
 
 app = Flask(__name__)
@@ -30,9 +30,34 @@ def get_task(task_id):
     return jsonify(t.to_dict())
 
 
+@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['PUT', 'PATCH'])
+def update_task(task_id):
+    t = Tasks.query.get_or_404(task_id)
+    if not request.json:
+        abort(400)
+    if 'title' in request.json:
+        if type(request.json['title']) != unicode:
+            abort(400)
+        t.task_title = request.json['title']
+
+    if 'description' in request.json:
+        if type(request.json['description']) != unicode:
+            abort(400)
+        t.task_description = request.json['description']
+
+    if 'done' in request.json:
+        if type(request.json['done']) is not bool:
+            abort(400)
+
+    db.session.commit()
+
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
+
+
+### HELPER FUNCTION ###
+# def make_public_task(task):
 
 
 if __name__ == '__main__':
