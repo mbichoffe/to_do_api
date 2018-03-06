@@ -48,8 +48,23 @@ def update_task(task_id):
     if 'done' in request.json:
         if type(request.json['done']) is not bool:
             abort(400)
-
+        t.task_completed = request.json['done']
+    
     db.session.commit()
+    # Return status code 200, with body being ID updated
+    return jsonify(t.to_dict()), 200
+
+
+@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    t = Tasks.query.get_or_404(task_id)
+    t.delete()
+    db.session.commit()
+
+    return jsonify(""), 200
+
+
+
 
 @app.errorhandler(404)
 def not_found(error):
