@@ -11,6 +11,7 @@ Serves similar same API twice, both by hand and using Flask-restless.
 
 """
 from flask import Flask, jsonify, request, make_response, abort, url_for
+from flask.ext.restless import APIManager
 from flask_httpauth import HTTPBasicAuth
 from model import connect_to_db, Tasks, db
 
@@ -114,4 +115,16 @@ def to_dict(task):
 
 if __name__ == '__main__':
     connect_to_db(app)
+
+    manager = APIManager(app, flask_sqlalchemy_db=db)
+
+    # Create API endpoints, which will be available at /api/<tablename> by
+    # default. Allowed HTTP methods can be specified as well.
+
+    manager.create_api(
+        Tasks,
+        methods=['GET', 'POST', 'DELETE', 'PUT', 'PATCH'])
+
+
     app.run(debug=True)
+    
