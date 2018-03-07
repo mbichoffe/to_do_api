@@ -18,6 +18,21 @@ from model import connect_to_db, Tasks, db
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
+@auth.get_password
+def get_password(username):
+    #TO DO: implement users and api keys on our db
+    if username == 'marina':
+        return 'python'
+    return None
+
+
+@auth.error_handler
+def unauthorized():
+    # Unfortunately web browsers have the nasty habit of showing an ugly
+    # login dialog box when a request comes back with a 401 error code.
+    # We could distract the browser by throwing an error like 403 (Forbidden)
+    # But it violates the HTTP standard
+    return make_response(jsonify({'error': 'Unauthorized access'}), 401)
 
 @app.route('/todo/api2/v1.0/tasks', methods=['GET'])
 def get_tasks():
@@ -41,8 +56,8 @@ def add_tasks():
 
 
 @app.route('/todo/api2/v1.0/tasks/<int:task_id>', methods=['GET'])
-@auth.login_required
-def get_task(task_id):
+# @auth.login_required
+def get_task(task_id): 
     t = Tasks.query.get_or_404(task_id)
     return jsonify(to_dict(t))
 
@@ -88,18 +103,6 @@ def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 
-@auth.get_password
-def get_password(username):
-    #TO DO: implement users and api keys on our db
-    if username == 'marina':
-        return 'python'
-    return None
-
-
-@auth.error_handler
-def unauthorized():
-    return make_response(jsonify({'error': 'Unauthorized access'}), 401)
-
 ### HELPER FUNCTION ###
 
 def to_dict(task):
@@ -127,4 +130,4 @@ if __name__ == '__main__':
 
 
     app.run(debug=True)
-    
+
