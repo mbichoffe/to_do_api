@@ -1,16 +1,30 @@
 #!flask/bin/python
+"""Flask server that demonstrates serving APIs.
+
+Serves similar same API twice, both by hand and using Flask-restless.
+
+/api : created using Flask-restless
+  /api/department/
+  /api/employee/
+
+/api2 : created by making routes and doing work directly
+  /api2/employee
+
+"""
 from flask import Flask, jsonify, request, make_response, abort, url_for
 from model import connect_to_db, Tasks, db
 
 app = Flask(__name__)
 
-@app.route('/todo/api/v1.0/tasks', methods=['GET'])
+
+@app.route('/todo/api2/v1.0/tasks', methods=['GET'])
 def get_tasks():
 
-    tasks = [t.to_dict() for t in Tasks.query.all()]
+    tasks = [to_dict(t) for t in Tasks.query.all()]
     return jsonify(tasks=tasks)
 
-@app.route('/todo/api/v1.0/tasks', methods=['POST'])
+
+@app.route('/todo/api2/v1.0/tasks', methods=['POST'])
 def add_tasks():
     if not request.json or 'title' not in request.json:
         abort(400)
@@ -24,13 +38,13 @@ def add_tasks():
     return jsonify(new_task.task_id), 201
 
 
-@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['GET'])
+@app.route('/todo/api2/v1.0/tasks/<int:task_id>', methods=['GET'])
 def get_task(task_id):
     t = Tasks.query.get_or_404(task_id)
-    return jsonify(t.to_dict())
+    return jsonify(to_dict(t))
 
 
-@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['PUT', 'PATCH'])
+@app.route('/todo/api2/v1.0/tasks/<int:task_id>', methods=['PUT', 'PATCH'])
 def update_task(task_id):
     t = Tasks.query.get_or_404(task_id)
     if not request.json:
@@ -49,21 +63,20 @@ def update_task(task_id):
         if type(request.json['done']) is not bool:
             abort(400)
         t.task_completed = request.json['done']
-    
+
     db.session.commit()
     # Return status code 200, with body being ID updated
-    return jsonify(t.to_dict()), 200
+    return jsonify(to_dict(t)), 200
 
 
-@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['DELETE'])
+@app.route('/todo/api2/v1.0/tasks/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
+    """Remove task from db."""
     t = Tasks.query.get_or_404(task_id)
     t.delete()
     db.session.commit()
 
     return jsonify(""), 200
-
-
 
 
 @app.errorhandler(404)
@@ -72,7 +85,16 @@ def not_found(error):
 
 
 ### HELPER FUNCTION ###
-# def make_public_task(task):
+
+def to_dict(task):
+    """Turn an employee object into a dictionary."""
+    return {
+        'id': task.task_id,
+        'title': task.task_title,
+        'description': task.task_description,
+        'completed': task.task_completed,
+        'uri': url_for('get_task', task_id=task.task_id, _external=True)
+    }
 
 
 if __name__ == '__main__':
