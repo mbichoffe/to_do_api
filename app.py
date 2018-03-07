@@ -4,17 +4,18 @@
 Serves similar same API twice, both by hand and using Flask-restless.
 
 /api : created using Flask-restless
-  /api/department/
-  /api/employee/
+  /api/tasks
 
 /api2 : created by making routes and doing work directly
-  /api2/employee
+  /api2/v1.0/tasks
 
 """
 from flask import Flask, jsonify, request, make_response, abort, url_for
+from flask_httpauth import HTTPBasicAuth
 from model import connect_to_db, Tasks, db
 
 app = Flask(__name__)
+auth = HTTPBasicAuth()
 
 
 @app.route('/todo/api2/v1.0/tasks', methods=['GET'])
@@ -39,6 +40,7 @@ def add_tasks():
 
 
 @app.route('/todo/api2/v1.0/tasks/<int:task_id>', methods=['GET'])
+@auth.login_required
 def get_task(task_id):
     t = Tasks.query.get_or_404(task_id)
     return jsonify(to_dict(t))
@@ -81,8 +83,21 @@ def delete_task(task_id):
 
 @app.errorhandler(404)
 def not_found(error):
+    """Return json for 404 error"""
     return make_response(jsonify({'error': 'Not found'}), 404)
 
+
+@auth.get_password
+def get_password(username):
+    #TO DO: implement users and api keys on our db
+    if username == 'marina':
+        return 'python'
+    return None
+
+
+@auth.error_handler
+def unauthorized():
+    return make_response(jsonify({'error': 'Unauthorized access'}), 401)
 
 ### HELPER FUNCTION ###
 
